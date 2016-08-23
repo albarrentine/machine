@@ -825,9 +825,9 @@ def row_transform_and_convert(sd, row):
             elif c[k]["function"] == "regexp":
                 row = row_fxn_regexp(sd, row, k)
 
-    ### Deprecated ###
     if "advanced_merge" in c:
-        row = row_fxn_join(sd, row, False)
+        raise ValueError('Found unsupported "advanced_merge" option in conform')
+    ### Deprecated ###
     if "split" in c:
         row = row_fxn_regexp(sd, row, False)
     ##################
@@ -857,8 +857,7 @@ def conform_smash_case(source_definition):
                 conform[k]["fields"] = [s.lower() for s in conform[k]["fields"]]
     
     if "advanced_merge" in conform:
-        for new_col, spec in conform["advanced_merge"].items():
-            spec["fields"] = [s.lower() for s in spec["fields"]]
+        raise ValueError('Found unsupported "advanced_merge" option in conform')
     return new_sd
 
 def row_smash_case(sd, input):
@@ -874,21 +873,12 @@ def row_merge(sd, row, key):
 
 def row_fxn_join(sd, row, key):
     "Create new columns by merging arbitrary other columns with a separator"
-    if not key: ## Deprecated Behavior
-        advanced_merge = sd["conform"]["advanced_merge"]
-        for new_field_name, merge_spec in advanced_merge.items():
-            separator = merge_spec.get("separator", " ")
-            try:
-                row[new_field_name] = separator.join([row[n] for n in merge_spec["fields"]])
-            except Exception as e:
-                _L.debug("Failure to merge row %r %s", e, row)
-    else: ## New behavior
-        fxn = sd["conform"][key]
-        separator = fxn.get("separator", " ")
-        try:
-            row[attrib_types[key]] = separator.join([row[n] for n in fxn["fields"]])
-        except Exception as e:
-            _L.debug("Failure to merge row %r %s", e, row)
+    fxn = sd["conform"][key]
+    separator = fxn.get("separator", " ")
+    try:
+        row[attrib_types[key]] = separator.join([row[n] for n in fxn["fields"]])
+    except Exception as e:
+        _L.debug("Failure to merge row %r %s", e, row)
     return row
 
 def row_fxn_regexp(sd, row, key):
